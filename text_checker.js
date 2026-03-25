@@ -1,3 +1,32 @@
+// HTML实体编码函数 - 防止XSS攻击
+const escapeHtml = (unsafe) => {
+    if (typeof unsafe !== 'string') return unsafe;
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
+// 清理危险HTML标签和事件处理器 - 防止XSS
+const sanitizeHtml = (html) => {
+    if (typeof html !== 'string') return html;
+    // 移除 script、iframe、object、embed 等危险标签
+    let sanitized = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    sanitized = sanitized.replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '');
+    sanitized = sanitized.replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '');
+    sanitized = sanitized.replace(/<embed[^>]*>/gi, '');
+    sanitized = sanitized.replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '');
+    // 移除事件处理器属性 (onerror, onclick, onload 等)
+    sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+    // 移除 javascript: 伪协议
+    sanitized = sanitized.replace(/javascript:/gi, '');
+    // 移除 data: URI (可能包含恶意代码)
+    sanitized = sanitized.replace(/data:text\/html[^;]*;base64,/gi, '');
+    return sanitized;
+};
+
 // 从localStorage加载数据，实现数据持久化
 const loadFromStorage = () => {
     const savedResults = localStorage.getItem('textCheckerResults');
@@ -277,8 +306,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const arrayBuffer = e.target.result;
                 mammoth.convertToHtml({arrayBuffer: arrayBuffer})
                     .then(function(result) {
-                        // 获取转换后的HTML内容
-                        const htmlContent = result.value;
+                        // 获取转换后的HTML内容并清理危险标签
+                        const htmlContent = sanitizeHtml(result.value);
                         
                         // 从HTML中提取纯文本内容，并保留换行符
                         const parser = new DOMParser();
@@ -439,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 resultItem.className = 'result-item processing-status';
                 resultItem.innerHTML = `
                     <div>
-                        <strong>${file.name}</strong>
+                        <strong>${escapeHtml(file.name)}</strong>
                         <span> - 处理中...</span>
                     </div>
                     <div class="status">处理中</div>
@@ -456,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 successItem.className = 'result-item success';
                 successItem.innerHTML = `
                     <div>
-                        <strong>${file.name}</strong>
+                        <strong>${escapeHtml(file.name)}</strong>
                         <span> - 正确率: ${result.result.accuracy.toFixed(2)}%</span>
                         <div class="file-results">
                             <div>替换错误: ${result.result.replaceCount}个</div>
@@ -476,8 +505,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     errorItem.className = 'result-item error';
                     errorItem.innerHTML = `
                         <div>
-                            <strong>${file.name}</strong>
-                            <span> - 错误: ${error.message}</span>
+                            <strong>${escapeHtml(file.name)}</strong>
+                            <span> - 错误: ${escapeHtml(error.message)}</span>
                         </div>
                         <div class="status processing-error">失败</div>
                     `;
@@ -592,15 +621,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         for (const op of mergedOps) {
             if (op.type === 'match') {
-                markedOriginal += original[originalIndex];
-                markedCopied += copied[copiedIndex];
+                markedOriginal += escapeHtml(original[originalIndex]);
+                markedCopied += escapeHtml(copied[copiedIndex]);
                 originalIndex++;
                 copiedIndex++;
             } else if (op.type === 'delete') {
                 // 连续少字
                 const deletedText = original.slice(originalIndex, originalIndex + op.count);
-                markedOriginal += `<span class="delete">${deletedText}</span>`;
-                markedCopied += `<span class="delete">${deletedText}</span>`;
+                markedOriginal += `<span class="delete">${escapeHtml(deletedText)}</span>`;
+                markedCopied += `<span class="delete">${escapeHtml(deletedText)}</span>`;
                 deleteCount += op.count;
                 originalIndex += op.count;
                 
@@ -610,8 +639,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (op.type === 'insert') {
                 // 连续多字
                 const insertedText = copied.slice(copiedIndex, copiedIndex + op.count);
-                markedOriginal += `<span class="insert">${insertedText}</span>`;
-                markedCopied += `<span class="insert">${insertedText}</span>`;
+                markedOriginal += `<span class="insert">${escapeHtml(insertedText)}</span>`;
+                markedCopied += `<span class="insert">${escapeHtml(insertedText)}</span>`;
                 insertCount += op.count;
                 copiedIndex += op.count;
                 
@@ -621,8 +650,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (op.type === 'replace') {
                 const originalText = original.slice(originalIndex, originalIndex + op.count);
                 const replacedText = copied.slice(copiedIndex, copiedIndex + op.count);
-                markedOriginal += `<span class="replace">${originalText}</span>`;
-                markedCopied += `<span class="replace">${replacedText}</span>`;
+                markedOriginal += `<span class="replace">${escapeHtml(originalText)}</span>`;
+                markedCopied += `<span class="replace">${escapeHtml(replacedText)}</span>`;
                 replaceCount += op.count;  // 单独统计替换
                 originalIndex += op.count;
                 copiedIndex += op.count;
@@ -788,7 +817,7 @@ document.addEventListener('DOMContentLoaded', function() {
             commonErrorsContainer.innerHTML = `
                 <div class="common-errors-stats">
                     <strong>常见错误文字：</strong>
-                    <span>${getMostCommonErrors()}</span>
+                    <span>${escapeHtml(getMostCommonErrors())}</span>
                 </div>
             `;
         }
@@ -833,14 +862,14 @@ document.addEventListener('DOMContentLoaded', function() {
         displayResults.forEach((result, index) => {
                                const row = document.createElement('tr');
                                row.innerHTML = `
-                                   <td>${result.fileName}</td>
-                                   <td>${result.accuracy}</td>
-                                   <td>${result.replaceCount}</td>
-                                   <td>${result.deleteCount}</td>
-                                   <td>${result.insertCount}</td>
-                                   <td>${formatTimestamp(result.timestamp)}</td>
+                                   <td>${escapeHtml(result.fileName)}</td>
+                                   <td>${escapeHtml(result.accuracy)}</td>
+                                   <td>${escapeHtml(String(result.replaceCount))}</td>
+                                   <td>${escapeHtml(String(result.deleteCount))}</td>
+                                   <td>${escapeHtml(String(result.insertCount))}</td>
+                                   <td>${escapeHtml(formatTimestamp(result.timestamp))}</td>
                                `;
-                                
+
                                statsTableBody.appendChild(row);
                            });
     }
