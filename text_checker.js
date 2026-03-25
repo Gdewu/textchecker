@@ -28,7 +28,7 @@ const sanitizeHtml = (html) => {
 };
 
 // 从文件名中提取姓名
-// 支持格式: "姓名.docx", "姓名_其他.docx", "姓名-其他.docx", "姓名 其他.docx"
+// 支持格式: "姓名.docx", "姓名_其他.docx", "姓名-其他.docx", "姓名 其他.docx", "姓名.doc"
 const extractNameFromFileName = (fileName) => {
     if (!fileName || typeof fileName !== 'string') return '';
     
@@ -329,13 +329,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // 处理单个DOCX文件导入的通用函数（返回Promise）
     function handleDocxFile(file) {
         return new Promise((resolve, reject) => {
-            if (!file || !file.name.endsWith('.docx')) {
-                reject(new Error('请选择DOCX格式的文件！'));
+            if (!file) {
+                reject(new Error('请选择文件！'));
+                return;
+            }
+            
+            const fileName = file.name;
+            const isDocx = fileName.toLowerCase().endsWith('.docx');
+            const isDoc = fileName.toLowerCase().endsWith('.doc');
+            
+            if (!isDocx && !isDoc) {
+                reject(new Error('请选择DOC或DOCX格式的文件！'));
+                return;
+            }
+            
+            if (isDoc) {
+                reject(new Error('检测到DOC格式文件，建议转换为DOCX格式以获得更好的兼容性。\n\n转换方法：\n1. 用Microsoft Word打开DOC文件\n2. 选择"文件" > "另存为"\n3. 选择格式为"Word文档(.docx)"\n4. 保存后重新导入'));
                 return;
             }
             
             lastModified = new Date(file.lastModified);
-            fileName = file.name.replace(/\.[^/.]+$/, "");
+            fileName = fileName.replace(/\.[^/.]+$/, "");
             
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -417,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('importDocxBtn').addEventListener('click', function() {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.docx';
+        input.accept = '.docx,.doc';
         input.multiple = true; // 允许选择多个文件
         input.onchange = function(e) {
             const files = Array.from(e.target.files);
