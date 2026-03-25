@@ -27,6 +27,42 @@ const sanitizeHtml = (html) => {
     return sanitized;
 };
 
+// 从文件名中提取姓名
+// 支持格式: "姓名.docx", "姓名_其他.docx", "姓名-其他.docx", "姓名 其他.docx"
+const extractNameFromFileName = (fileName) => {
+    if (!fileName || typeof fileName !== 'string') return '';
+    
+    // 移除扩展名
+    const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
+    
+    // 尝试提取姓名（假设姓名在分隔符前）
+    // 匹配中文姓名（2-4个汉字）或英文姓名
+    const patterns = [
+        // 匹配开头的2-4个汉字
+        /^([\u4e00-\u9fa5]{2,4})/,
+        // 匹配开头的中文姓名，后跟分隔符
+        /^([\u4e00-\u9fa5]{2,4})[_\-\s]/,
+        // 匹配开头的英文姓名
+        /^([a-zA-Z\s]{2,20})/,
+        // 匹配开头的英文姓名，后跟分隔符
+        /^([a-zA-Z\s]{2,20})[_\-\s]/
+    ];
+    
+    for (const pattern of patterns) {
+        const match = nameWithoutExt.match(pattern);
+        if (match && match[1]) {
+            // 去除首尾空格
+            const name = match[1].trim();
+            if (name.length >= 2) {
+                return name;
+            }
+        }
+    }
+    
+    // 如果没有匹配到，返回文件名（不含扩展名）
+    return nameWithoutExt;
+};
+
 // 从localStorage加载数据，实现数据持久化
 const loadFromStorage = () => {
     const savedResults = localStorage.getItem('textCheckerResults');
@@ -861,8 +897,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         displayResults.forEach((result, index) => {
                                const row = document.createElement('tr');
+                               const name = extractNameFromFileName(result.fileName);
                                row.innerHTML = `
-                                   <td>${escapeHtml(result.fileName)}</td>
+                                   <td>${escapeHtml(name)}</td>
                                    <td>${escapeHtml(result.accuracy)}</td>
                                    <td>${escapeHtml(String(result.replaceCount))}</td>
                                    <td>${escapeHtml(String(result.deleteCount))}</td>
