@@ -1,0 +1,125 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本抄写正确率检测工具</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="mammoth.browser.js"></script>
+    <script src="text_checker.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>文本抄写正确率检测工具</h1>
+        </header>
+        
+        <div class="input-section">
+            <div class="text-area">
+                <label for="originalText">目标文本:</label>
+                <textarea id="originalText" placeholder="请输入目标文本...">人生苦短，我用Python。编程让世界更美好。</textarea>
+            </div>
+            
+            <div class="text-area">
+                <label for="copiedText">抄写文本:</label>
+                <textarea id="copiedText" placeholder="请输入抄写文本...">人生若短，我用Python。编程让世界更关好。</textarea>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="checkBtn">检测正确率</button>
+            <button id="pasteBtn">粘贴剪贴板内容</button>
+            <div class="drop-area">
+                <button id="importDocxBtn" class="drop-target">导入DOCX文件</button>
+                <div id="dropHint" class="drop-hint">或将多个DOCX文件拖放到此处</div>
+            </div>
+            <div class="file-info" id="fileInfo" style="display: none;"></div>
+        </div>
+        
+        <!-- 进度条 -->
+        <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+        </div>
+        
+        <!-- 多文件处理结果列表 -->
+        <div class="results-list" id="resultsList" style="display: none;"></div>
+        
+        <div class="results">
+            <div class="accuracy" id="accuracy">0.00</div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="color-box replace-color"></div>
+                    <span>错字: <span id="replaceCount">0</span></span>
+                </div>
+                <div class="stat-item">
+                    <div class="color-box delete-color"></div>
+                    <span>少字: <span id="deleteCount">0</span></span>
+                </div>
+                <div class="stat-item">
+                    <div class="color-box insert-color"></div>
+                    <span>多字: <span id="insertCount">0</span></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="comparison">
+            <div>
+                <label>目标文本对比:</label>
+                <div class="comparison-text" id="originalComparison"></div>
+            </div>
+            
+            <div>
+                <label>抄写文本对比:</label>
+                <div class="comparison-text" id="copiedComparison"></div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box replace-color"></div>
+                <span>错字</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box delete-color"></div>
+                <span>少字</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box insert-color"></div>
+                <span>多字</span>
+            </div>
+
+        </div>
+        <div id="statsTableContainer">
+            <div class="stats-header">
+                <h3>统计数据</h3>
+                <div class="table-controls">
+                    <button id="clearDataBtn" class="clear-data-btn">清空所有数据</button>
+                </div>
+            </div>
+            <div id="commonErrorsContainer" class="common-errors-container"></div>
+            <table id="statsTable">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="fileName">文件名 <span class="sort-indicator"></span></th>
+                        <th class="sortable" data-sort="accuracy">准确率 <span class="sort-indicator"></span></th>
+                        <th>替换数</th>
+                        <th>删除数</th>
+                        <th>插入数</th>
+                        <th class="sortable" data-sort="timestamp">时间 <span class="sort-indicator"></span></th>
+                    </tr>
+                </thead>
+                <tbody id="statsTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            <p>文本抄写正确率检测工具 &copy; 2025</p>
+        </footer>
+    </div>
+
+</body>
+</html>
